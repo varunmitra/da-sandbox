@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Page Compare - DA App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="icon" href="data:,">
+    <!-- Import DA App SDK -->
+    <script src="https://da.live/nx/utils/sdk.js" type="module"></script>
+    <!-- Project App Logic -->
+    <script src="/tools/page-compare/page-compare.js" type="module"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        input[type="url"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input[type="url"]:focus, input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+        
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .score {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .score.pass {
+            color: #4CAF50;
+        }
+        
+        .score.fail {
+            color: #f44336;
+        }
+        
+        .details {
+            font-size: 14px;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 30px 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .da-context {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .da-context h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .comparison-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .comparison-item h4 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            transition: width 0.3s ease;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <h1>Page Compare - Document Authoring</h1>
+        
+        <div class="da-context" id="daContext">
+            <h3>DA Context</h3>
+            <div id="contextInfo">Loading DA context...</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="preGoLiveUrl">Pre-Go-Live URL:</label>
+            <input type="url" id="preGoLiveUrl" placeholder="https://example.com/pre-go-live-page" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="currentUrl">Current Site URL:</label>
+            <input type="url" id="currentUrl" placeholder="https://example.com/current-page" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="successThreshold">Success Threshold (%):</label>
+            <input type="number" id="successThreshold" value="90" min="0" max="100" required>
+        </div>
+        
+        <button class="button" id="compareBtn">Compare Pages</button>
+        <button class="button" id="cancelBtn" style="background: #ff9800; display: none;">Cancel Comparison</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Analyzing pages...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div id="progressText">0%</div>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="results" id="results">
+            <div class="score" id="score"></div>
+            <div class="details" id="details"></div>
+            
+            <div class="comparison-grid" id="comparisonGrid">
+                <div class="comparison-item">
+                    <h4>Content Analysis</h4>
+                    <div id="contentAnalysis"></div>
+                </div>
+                <div class="comparison-item">
+                    <h4>Layout Analysis</h4>
+                    <div id="layoutAnalysis"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="button" id="clearResultsBtn" style="background: #f44336; flex: 1;">Clear Results</button>
+                <button class="button" id="exportResultsBtn" style="background: #2196F3; flex: 1;">Export Report</button>
+            </div>
+        </div>
+    </div>
+  </body>
+</html> 
